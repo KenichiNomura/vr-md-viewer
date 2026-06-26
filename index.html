@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MD Trajectory VR Viewer</title>
+    <style>
+      html, body { margin: 0; padding: 0; overflow: hidden; background: #111; }
+      #app { width: 100vw; height: 100vh; }
+      #ui {
+        position: absolute; top: 0; left: 0; z-index: 10;
+        font-family: system-ui, sans-serif; color: #eee;
+        background: rgba(20,20,20,0.85); padding: 12px 16px;
+        border-radius: 0 0 8px 0; max-width: 360px;
+      }
+      #ui h1 { font-size: 14px; margin: 0 0 8px; font-weight: 600; }
+      #ui label { display: block; font-size: 12px; margin: 6px 0 2px; }
+      #ui input[type="file"] { font-size: 12px; }
+      #ui input[type="range"] { width: 100%; }
+      #ui button { margin-right: 6px; margin-top: 4px; font-size: 12px; cursor: pointer; }
+      #status { font-size: 11px; opacity: 0.8; margin-top: 6px; white-space: pre-line; }
+      #vrEntry { margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="ui">
+      <h1>MD Trajectory VR Viewer</h1>
+      <label for="fileInput">Load extended XYZ file (or drag &amp; drop anywhere)</label>
+      <input id="fileInput" type="file" accept=".xyz,.extxyz,.txt" />
+      <div id="playback" style="display:none">
+        <label>Frame: <span id="frameLabel">0 / 0</span></label>
+        <input id="frameSlider" type="range" min="0" max="0" value="0" />
+        <div>
+          <button id="playBtn">Play</button>
+          <button id="stepBack">&lt;</button>
+          <button id="stepFwd">&gt;</button>
+          <label style="display:inline-block;margin-left:8px;">FPS
+            <input id="fpsInput" type="number" min="1" max="60" value="15" style="width:48px" />
+          </label>
+        </div>
+      </div>
+      <div id="status"></div>
+      <div id="vrEntry"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
