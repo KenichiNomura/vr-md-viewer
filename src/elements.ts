@@ -6,7 +6,7 @@ export interface ElementInfo {
   radius: number; // covalent radius, used both for bond cutoffs and atom sphere scale
 }
 
-const DEFAULT: ElementInfo = { color: 0xff69b4, radius: 0.7 };
+const DEFAULT: ElementInfo = { color: 0xb0b0b0, radius: 0.7 };
 
 export const ELEMENT_TABLE: Record<string, ElementInfo> = {
   H: { color: 0xffffff, radius: 0.31 },
@@ -16,6 +16,7 @@ export const ELEMENT_TABLE: Record<string, ElementInfo> = {
   F: { color: 0x90e050, radius: 0.57 },
   Na: { color: 0xab5cf2, radius: 1.66 },
   Mg: { color: 0x8aff00, radius: 1.41 },
+  Si: { color: 0xf0c8a0, radius: 1.11 },
   P: { color: 0xff8000, radius: 1.07 },
   S: { color: 0xffff30, radius: 1.05 },
   Cl: { color: 0x1ff01f, radius: 1.02 },
