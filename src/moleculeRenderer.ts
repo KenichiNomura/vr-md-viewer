@@ -1,23 +1,51 @@
 import * as THREE from "three";
 import type { Trajectory } from "./xyzParser";
-import { getElementInfo, uniqueSymbols } from "./elements";
+import { getElementInfo } from "./elements";
 import { computeBonds, type Bond } from "./bonds";
 
 const ATOM_SPHERE_SCALE = 0.35; // shrink covalent radius for a ball-and-stick look
 const BOND_RADIUS = 0.08;
 
+function getAtomSymbol(trajectory: Trajectory, frameIndex: number, atomIndex: number): string {
+  return trajectory.frameSymbols[frameIndex * trajectory.numAtoms + atomIndex] ?? trajectory.symbols[atomIndex] ?? "X";
+}
+
+function getFrameSymbols(trajectory: Trajectory, frameIndex: number): string[] {
+  const symbols = new Array<string>(trajectory.numAtoms);
+  for (let i = 0; i < trajectory.numAtoms; i++) {
+    symbols[i] = getAtomSymbol(trajectory, frameIndex, i);
+  }
+  return symbols;
+}
+
+function getMaxAtomCountsBySymbol(trajectory: Trajectory): Map<string, number> {
+  const maxCounts = new Map<string, number>();
+  const frameCounts = new Map<string, number>();
+
+  for (let frame = 0; frame < trajectory.numFrames; frame++) {
+    frameCounts.clear();
+    for (let atomIndex = 0; atomIndex < trajectory.numAtoms; atomIndex++) {
+      const symbol = getAtomSymbol(trajectory, frame, atomIndex);
+      frameCounts.set(symbol, (frameCounts.get(symbol) ?? 0) + 1);
+    }
+    for (const [symbol, count] of frameCounts) {
+      maxCounts.set(symbol, Math.max(maxCounts.get(symbol) ?? 0, count));
+    }
+  }
+
+  return maxCounts;
+}
+
 /**
- * Renders a trajectory frame using one InstancedMesh per element (so each
- * mesh shares geometry/material/color) plus one InstancedMesh for bonds.
- * Updating a frame just rewrites instance matrices, not geometry, which is
- * what keeps this fast enough for VR framerates.
+ * Renders a trajectory frame using one InstancedMesh per element seen in the
+ * trajectory plus one InstancedMesh for bonds. Updating a frame rewrites
+ * instance matrices and the current atom-to-element mesh mapping.
  */
 export class MoleculeRenderer {
   readonly group = new THREE.Group();
 
   private trajectory: Trajectory;
   private atomMeshes = new Map<string, THREE.InstancedMesh>();
-  private atomIndicesBySymbol = new Map<string, number[]>();
   private bondMesh: THREE.InstancedMesh;
   private bondCapacity: number;
   private currentFrame = -1;
@@ -31,19 +59,14 @@ export class MoleculeRenderer {
   constructor(trajectory: Trajectory) {
     this.trajectory = trajectory;
 
-    for (const symbol of uniqueSymbols(trajectory.symbols)) {
-      const indices: number[] = [];
-      for (let i = 0; i < trajectory.symbols.length; i++) {
-        if (trajectory.symbols[i] === symbol) indices.push(i);
-      }
-      this.atomIndicesBySymbol.set(symbol, indices);
-
+    for (const [symbol, maxCount] of getMaxAtomCountsBySymbol(trajectory)) {
       const info = getElementInfo(symbol);
       const geom = new THREE.SphereGeometry(info.radius * ATOM_SPHERE_SCALE, 16, 12);
       const mat = new THREE.MeshStandardMaterial({ color: info.color, roughness: 0.4, metalness: 0.05 });
-      const mesh = new THREE.InstancedMesh(geom, mat, indices.length);
+      const mesh = new THREE.InstancedMesh(geom, mat, maxCount);
+      mesh.count = 0;
       mesh.userData.symbol = symbol;
-      mesh.userData.atomIndices = indices;
+      mesh.userData.atomIndices = [];
       // InstancedMesh frustum culling tests the original (origin-centered)
       // geometry bounds, not the spread of instance positions, so the whole
       // mesh can vanish once the centroid leaves the frustum. Disable it.
@@ -71,7 +94,7 @@ export class MoleculeRenderer {
       this.bondMesh.instanceMatrix.needsUpdate = true;
     } else {
       this.bondsCacheFrame = -1;
-      this.setFrame(this.currentFrame);
+      this.setFrame(this.currentFrame, true);
     }
   }
 
@@ -87,21 +110,41 @@ export class MoleculeRenderer {
     this.group.position.set(-center.x, -center.y, -center.z);
   }
 
-  setFrame(frameIndex: number) {
-    if (frameIndex === this.currentFrame) return;
+  setFrame(frameIndex: number, force = false) {
+    if (!force && frameIndex === this.currentFrame) return;
     this.currentFrame = frameIndex;
     const { positions, numAtoms } = this.trajectory;
     const base = frameIndex * numAtoms * 3;
+    const countsBySymbol = new Map<string, number>();
+    const atomIndicesBySymbol = new Map<string, number[]>();
 
     for (const [, mesh] of this.atomMeshes) {
-      const indices: number[] = mesh.userData.atomIndices;
-      for (let k = 0; k < indices.length; k++) {
-        const atomIdx = indices[k];
-        const off = base + atomIdx * 3;
-        this.atomTransform.position.set(positions[off], positions[off + 1], positions[off + 2]);
-        this.atomTransform.updateMatrix();
-        mesh.setMatrixAt(k, this.atomTransform.matrix);
+      mesh.count = 0;
+      mesh.userData.atomIndices = [];
+    }
+
+    for (let atomIndex = 0; atomIndex < numAtoms; atomIndex++) {
+      const symbol = getAtomSymbol(this.trajectory, frameIndex, atomIndex);
+      const mesh = this.atomMeshes.get(symbol);
+      if (!mesh) continue;
+
+      const instanceIndex = countsBySymbol.get(symbol) ?? 0;
+      const indices = atomIndicesBySymbol.get(symbol) ?? [];
+      if (indices.length === 0) {
+        atomIndicesBySymbol.set(symbol, indices);
       }
+
+      const off = base + atomIndex * 3;
+      this.atomTransform.position.set(positions[off], positions[off + 1], positions[off + 2]);
+      this.atomTransform.updateMatrix();
+      mesh.setMatrixAt(instanceIndex, this.atomTransform.matrix);
+      countsBySymbol.set(symbol, instanceIndex + 1);
+      indices.push(atomIndex);
+    }
+
+    for (const [symbol, mesh] of this.atomMeshes) {
+      mesh.count = countsBySymbol.get(symbol) ?? 0;
+      mesh.userData.atomIndices = atomIndicesBySymbol.get(symbol) ?? [];
       mesh.instanceMatrix.needsUpdate = true;
     }
 
@@ -116,7 +159,7 @@ export class MoleculeRenderer {
         this.trajectory.positions,
         frameIndex,
         this.trajectory.numAtoms,
-        this.trajectory.symbols,
+        getFrameSymbols(this.trajectory, frameIndex),
       );
       this.bondsCacheFrame = frameIndex;
     }

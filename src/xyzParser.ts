@@ -7,8 +7,10 @@
 export interface Trajectory {
   numFrames: number;
   numAtoms: number;
-  /** Element symbol per atom (assumed constant across frames). */
+  /** Element symbol per atom in first-frame atom order. */
   symbols: string[];
+  /** Flattened symbols: frame i, atom j -> frameSymbols[i * numAtoms + j]. */
+  frameSymbols: string[];
   /** Flattened positions: frame i, atom j -> positions[i * numAtoms * 3 + j*3 + {0,1,2}] */
   positions: Float32Array;
   /** Per-frame comment line, kept for reference (e.g. lattice, energy). */
@@ -187,6 +189,7 @@ export async function parseExtendedXYZ(
 
   let numAtoms = -1;
   let symbols: string[] = [];
+  const frameSymbols: string[] = [];
   const comments: string[] = [];
   let positions: Float32Array | null = null;
   let frameCapacity = 0;
@@ -227,6 +230,7 @@ export async function parseExtendedXYZ(
 
     ensureCapacity(numFrames + 1);
     const base = numFrames * numAtoms * 3;
+    const symbolBase = numFrames * numAtoms;
     const frameAtoms: ParsedAtom[] = [];
 
     for (let i = 0; i < numAtoms; i++) {
@@ -254,6 +258,7 @@ export async function parseExtendedXYZ(
         if (numFrames === 0) {
           symbols[atomIndex] = atom.symbol;
         }
+        frameSymbols[symbolBase + atomIndex] = atom.symbol;
         const off = base + atomIndex * 3;
         positions![off] = atom.x;
         positions![off + 1] = atom.y;
@@ -265,6 +270,7 @@ export async function parseExtendedXYZ(
         if (numFrames === 0) {
           symbols.push(atom.symbol);
         }
+        frameSymbols[symbolBase + i] = atom.symbol;
         const off = base + i * 3;
         positions![off] = atom.x;
         positions![off + 1] = atom.y;
@@ -284,6 +290,7 @@ export async function parseExtendedXYZ(
     numFrames,
     numAtoms,
     symbols,
+    frameSymbols,
     positions: (positions as Float32Array).subarray(0, numFrames * numAtoms * 3),
     comments,
   };
