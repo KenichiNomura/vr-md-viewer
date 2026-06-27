@@ -4,12 +4,14 @@ A browser-based molecular dynamics trajectory viewer for extended XYZ files, wit
 
 [Open the viewer](https://kenichinomura.github.io/vr-md-viewer/)
 
+[Tutorial: loading XYZ files and using multiuser rooms](docs/tutorial.md)
+
 ![MD Trajectory VR Viewer screenshot](docs/screenshot.png)
 
 ## Features
 
 - Load extended XYZ trajectories from a local file, drag-and-drop, or URL.
-- Play multi-frame trajectories with a frame slider, step buttons, and FPS control.
+- Play multi-frame trajectories with a separate frame slider, step buttons, and FPS control panel.
 - Color atoms by element and update atom types correctly on each frame.
 - Compute bonds per frame from covalent radii.
 - Choose bundled 360-degree VR backgrounds, with high-contrast dark cyberspace as the default.

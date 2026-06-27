@@ -28,9 +28,24 @@
       #ui input[type="file"] { font-size: 12px; }
       #ui input[type="text"] { width: 100%; box-sizing: border-box; font-size: 12px; margin-top: 4px; }
       #ui select { width: 100%; box-sizing: border-box; font-size: 12px; margin-top: 4px; }
-      #ui input[type="range"] { width: 100%; }
       #ui button { margin-right: 6px; margin-top: 4px; font-size: 12px; cursor: pointer; }
       #status { font-size: 11px; opacity: 0.8; margin-top: 6px; white-space: pre-line; }
+      #playback {
+        position: fixed; left: 16px; bottom: 16px; z-index: 12;
+        width: min(360px, calc(100vw - 32px)); box-sizing: border-box;
+        font-family: system-ui, sans-serif; color: #eee;
+        background: rgba(20,20,20,0.85); padding: 10px 12px;
+        border-radius: 8px;
+      }
+      #playback label { display: block; font-size: 12px; margin: 0 0 4px; }
+      #playback input[type="range"] { width: 100%; }
+      #playback button { margin-right: 6px; margin-top: 6px; font-size: 12px; cursor: pointer; }
+      .playbackControls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+      .playbackControls button { margin-right: 0 !important; }
+      .fpsControl {
+        display: inline-flex !important; align-items: center; gap: 4px;
+        margin: 6px 0 0 4px !important;
+      }
       #vrEntry {
         position: fixed; top: 12px; right: 16px; z-index: 20;
         margin: 0; pointer-events: auto;
@@ -62,18 +77,6 @@
         <button id="loadUrlBtn" style="margin-top:4px">Load URL</button>
         <label for="backgroundSelect" style="margin-top:8px">Background</label>
         <select id="backgroundSelect"></select>
-        <div id="playback" style="display:none">
-          <label>Frame: <span id="frameLabel">0 / 0</span></label>
-          <input id="frameSlider" type="range" min="0" max="0" value="0" />
-          <div>
-            <button id="playBtn">Play</button>
-            <button id="stepBack">&lt;</button>
-            <button id="stepFwd">&gt;</button>
-            <label style="display:inline-block;margin-left:8px;">FPS
-              <input id="fpsInput" type="number" min="1" max="60" value="15" style="width:48px" />
-            </label>
-          </div>
-        </div>
         <div id="collaboration" class="panelDivider">
           <label for="roomInput">Room</label>
           <div class="row">
@@ -96,6 +99,18 @@
           <div id="collabStatus">Offline</div>
         </div>
         <div id="status"></div>
+      </div>
+    </div>
+    <div id="playback" style="display:none">
+      <label>Frame: <span id="frameLabel">0 / 0</span></label>
+      <input id="frameSlider" type="range" min="0" max="0" value="0" />
+      <div class="playbackControls">
+        <button id="playBtn">Play</button>
+        <button id="stepBack">&lt;</button>
+        <button id="stepFwd">&gt;</button>
+        <label class="fpsControl">FPS
+          <input id="fpsInput" type="number" min="1" max="60" value="15" style="width:48px" />
+        </label>
       </div>
     </div>
     <div id="vrEntry"></div>
