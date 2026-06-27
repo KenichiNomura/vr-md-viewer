@@ -17,6 +17,7 @@ export interface PresenterState {
   frameIndex: number;
   playing: boolean;
   fps: number;
+  backgroundId: string;
   transform: TransformState;
   view: ViewState;
   presenterId: string | null;
@@ -50,6 +51,7 @@ interface CollaborationCallbacks {
 
 const COLORS = ["#44ccff", "#ffcc44", "#ff6b8a", "#69db7c", "#b197fc", "#ffa94d"];
 const SERVER_PARAM = "server";
+const JOIN_TIMEOUT_MS = 8000;
 
 function randomId() {
   if (crypto.randomUUID) return crypto.randomUUID().replace(/-/g, "");
@@ -118,6 +120,7 @@ export class CollaborationClient {
   private roomId: string | null = null;
   private serverBase = "";
   private intentionallyClosing = false;
+  private joinTimeoutId: number | null = null;
   private user: RoomUser = {
     id: randomId(),
     name: "Guest",
@@ -189,10 +192,22 @@ export class CollaborationClient {
     this.setStatus("connecting");
     const ws = new WebSocket(`${base}/room/${encodeURIComponent(normalizedRoomId)}`);
     this.ws = ws;
+    this.joinTimeoutId = window.setTimeout(() => {
+      if (this.ws !== ws) return;
+      this.clearJoinTimeout();
+      this.ws = null;
+      this.roomId = null;
+      this.serverBase = "";
+      this.users = [];
+      this.presenterId = null;
+      this.callbacks.onPresence?.({ type: "presence", users: [], presenterId: null });
+      this.setStatus("error");
+      this.callbacks.onError?.(`Room connection timed out: ${base}`);
+      ws.close(4000, "Join timed out");
+    }, JOIN_TIMEOUT_MS);
 
     ws.addEventListener("open", () => {
       if (this.ws !== ws) return;
-      this.setStatus("connected");
       this.send({ type: "join", user: this.user });
     });
     ws.addEventListener("message", (event) => {
@@ -201,6 +216,7 @@ export class CollaborationClient {
     });
     ws.addEventListener("close", (event) => {
       if (this.ws !== ws) return;
+      this.clearJoinTimeout();
       const wasIntentional = this.intentionallyClosing;
       this.users = [];
       this.presenterId = null;
@@ -219,12 +235,14 @@ export class CollaborationClient {
     });
     ws.addEventListener("error", () => {
       if (this.ws !== ws) return;
+      this.clearJoinTimeout();
       this.callbacks.onError?.(`Room connection failed: ${base}`);
       this.setStatus("error");
     });
   }
 
   disconnect() {
+    this.clearJoinTimeout();
     this.intentionallyClosing = Boolean(this.ws);
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.send({ type: "leave" });
@@ -258,8 +276,10 @@ export class CollaborationClient {
     }
 
     if (message.type === "snapshot") {
+      this.clearJoinTimeout();
       this.users = message.users;
       this.presenterId = message.state.presenterId;
+      this.setStatus("connected");
       this.callbacks.onSnapshot?.(message);
       this.callbacks.onPresenterChanged?.(this.presenterId);
       return;
@@ -286,6 +306,8 @@ export class CollaborationClient {
     }
 
     if (message.type === "error") {
+      this.clearJoinTimeout();
+      this.setStatus("error");
       this.callbacks.onError?.(message.message);
     }
   }
@@ -298,5 +320,11 @@ export class CollaborationClient {
   private setStatus(status: ConnectionStatus) {
     this.status = status;
     this.callbacks.onConnectionStatus?.(status);
+  }
+
+  private clearJoinTimeout() {
+    if (this.joinTimeoutId === null) return;
+    window.clearTimeout(this.joinTimeoutId);
+    this.joinTimeoutId = null;
   }
 }

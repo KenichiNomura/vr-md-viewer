@@ -7,6 +7,12 @@ import { VRObjectManipulator } from "./vrInteraction";
 import { MeasurementTool } from "./measurement";
 import { Playback } from "./playback";
 import {
+  BACKGROUND_PRESETS,
+  DEFAULT_BACKGROUND_ID,
+  getBackgroundPreset,
+  normalizeBackgroundId,
+} from "./backgrounds";
+import {
   CollaborationClient,
   defaultWebSocketBase,
   makeRoomId,
@@ -19,10 +25,13 @@ import {
 } from "./collaboration";
 
 const appEl = document.getElementById("app")!;
+const uiEl = document.getElementById("ui")!;
 const statusEl = document.getElementById("status")!;
+const toggleControlsBtn = document.getElementById("toggleControlsBtn") as HTMLButtonElement;
 const fileInput = document.getElementById("fileInput") as HTMLInputElement;
 const urlInput = document.getElementById("urlInput") as HTMLInputElement;
 const loadUrlBtn = document.getElementById("loadUrlBtn") as HTMLButtonElement;
+const backgroundSelect = document.getElementById("backgroundSelect") as HTMLSelectElement;
 const vrEntryEl = document.getElementById("vrEntry")!;
 const playbackEl = document.getElementById("playback")!;
 const frameSlider = document.getElementById("frameSlider") as HTMLInputElement;
@@ -50,8 +59,9 @@ window.addEventListener("unhandledrejection", (e) => {
   statusEl.textContent = `Unhandled rejection: ${e.reason}`;
 });
 
+const defaultSceneBackground = new THREE.Color(0x111317);
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x111317);
+scene.background = defaultSceneBackground;
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 1000);
 camera.position.set(0, 1.5, 4);
@@ -63,7 +73,16 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 appEl.appendChild(renderer.domElement);
 
-vrEntryEl.appendChild(VRButton.createButton(renderer));
+const vrButton = VRButton.createButton(renderer);
+Object.assign(vrButton.style, {
+  position: "static",
+  top: "auto",
+  right: "auto",
+  bottom: "auto",
+  left: "auto",
+  margin: "0",
+});
+vrEntryEl.appendChild(vrButton);
 
 const orbitControls = new OrbitControls(camera, renderer.domElement);
 orbitControls.target.set(0, 1, 0);
@@ -90,6 +109,8 @@ let lastPresenterSyncAt = 0;
 let lastObservedTransform = "";
 let lastObservedView = "";
 let remoteApplyVersion = 0;
+const MIN_FPS = 1;
+const MAX_FPS = 60;
 
 // Persistent group that VR grab/scale acts on; molecule contents are swapped
 // in/out of it per file load so the manipulator/controllers only need to be
@@ -123,10 +144,39 @@ for (const controller of manipulator.getControllers()) {
 
 const USER_NAME_KEY = "vr-md-viewer-user-name";
 const SERVER_BASE_KEY = "vr-md-viewer-server-base";
-const roomFromUrl = sanitizeRoomId(new URLSearchParams(location.search).get("room") ?? "");
+const BACKGROUND_KEY = "vr-md-viewer-background";
+const CONTROLS_COLLAPSED_KEY = "vr-md-viewer-controls-collapsed";
+const urlParams = new URLSearchParams(location.search);
+const backgroundFromUrl = urlParams.get("background");
+let currentBackgroundId = backgroundFromUrl
+  ? normalizeBackgroundId(backgroundFromUrl)
+  : normalizeBackgroundId(localStorage.getItem(BACKGROUND_KEY) ?? DEFAULT_BACKGROUND_ID);
+let appliedBackgroundId = "";
+let backgroundLoadVersion = 0;
+const backgroundLoader = new THREE.TextureLoader();
+const backgroundTextures = new Map<string, THREE.Texture>();
+
+for (const preset of BACKGROUND_PRESETS) {
+  const option = document.createElement("option");
+  option.value = preset.id;
+  option.textContent = preset.label;
+  backgroundSelect.appendChild(option);
+}
+backgroundSelect.value = currentBackgroundId;
+
+function setControlsCollapsed(collapsed: boolean) {
+  uiEl.classList.toggle("collapsed", collapsed);
+  toggleControlsBtn.textContent = collapsed ? "Show" : "Hide";
+  toggleControlsBtn.setAttribute("aria-expanded", String(!collapsed));
+  localStorage.setItem(CONTROLS_COLLAPSED_KEY, collapsed ? "1" : "0");
+}
+
+setControlsCollapsed(localStorage.getItem(CONTROLS_COLLAPSED_KEY) === "1");
+
+const roomFromUrl = sanitizeRoomId(urlParams.get("room") ?? "");
 roomInput.value = roomFromUrl.length >= 3 ? roomFromUrl : makeRoomId();
 userNameInput.value = localStorage.getItem(USER_NAME_KEY) ?? `User ${Math.floor(1000 + Math.random() * 9000)}`;
-serverInput.value = normalizeWebSocketBase(new URLSearchParams(location.search).get("server") ?? localStorage.getItem(SERVER_BASE_KEY) ?? defaultWebSocketBase());
+serverInput.value = normalizeWebSocketBase(urlParams.get("server") ?? localStorage.getItem(SERVER_BASE_KEY) ?? defaultWebSocketBase());
 
 const collaboration = new CollaborationClient({
   onSnapshot: (message) => {
@@ -185,6 +235,74 @@ function getViewState(): ViewState {
   };
 }
 
+function clampFps(value: number) {
+  return Math.min(MAX_FPS, Math.max(MIN_FPS, Math.round(value)));
+}
+
+function readFpsInput() {
+  const value = Number.parseFloat(fpsInput.value);
+  return Number.isFinite(value) ? clampFps(value) : 15;
+}
+
+function applyFpsInput(commit = false) {
+  if (!playback) return;
+  const parsed = Number.parseFloat(fpsInput.value);
+  if (!Number.isFinite(parsed)) {
+    if (commit) fpsInput.value = String(playback.fps);
+    return;
+  }
+  playback.fps = clampFps(parsed);
+  if (commit) fpsInput.value = String(playback.fps);
+  markPresenterStateDirty(true);
+}
+
+async function setSceneBackground(
+  backgroundId: string,
+  options: { broadcastState?: boolean; persist?: boolean } = {},
+) {
+  const { broadcastState = true, persist = true } = options;
+  const nextBackgroundId = normalizeBackgroundId(backgroundId);
+
+  if (persist) {
+    localStorage.setItem(BACKGROUND_KEY, nextBackgroundId);
+  }
+  if (currentBackgroundId === nextBackgroundId && appliedBackgroundId === nextBackgroundId) {
+    if (broadcastState) markPresenterStateDirty(true);
+    return;
+  }
+
+  currentBackgroundId = nextBackgroundId;
+  backgroundSelect.value = nextBackgroundId;
+  const loadVersion = ++backgroundLoadVersion;
+  const preset = getBackgroundPreset(nextBackgroundId);
+
+  if (!preset.url) {
+    scene.background = defaultSceneBackground;
+    appliedBackgroundId = nextBackgroundId;
+    if (broadcastState) markPresenterStateDirty(true);
+    return;
+  }
+
+  try {
+    let texture = backgroundTextures.get(nextBackgroundId);
+    if (!texture) {
+      texture = await backgroundLoader.loadAsync(new URL(preset.url, location.href).toString());
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      backgroundTextures.set(nextBackgroundId, texture);
+    }
+    if (loadVersion !== backgroundLoadVersion || currentBackgroundId !== nextBackgroundId) return;
+    scene.background = texture;
+    appliedBackgroundId = nextBackgroundId;
+    if (broadcastState) markPresenterStateDirty(true);
+  } catch (err) {
+    console.error(err);
+    if (loadVersion === backgroundLoadVersion) {
+      statusEl.textContent = `Background error: ${(err as Error).message}`;
+    }
+  }
+}
+
 function applyMoleculeTransform(transform: TransformState) {
   moleculeRoot.position.fromArray(transform.position);
   moleculeRoot.quaternion.fromArray(transform.quaternion);
@@ -208,7 +326,8 @@ function getPresenterState(): PresenterState {
     trajectoryUrl: currentTrajectoryUrl,
     frameIndex: playback?.frame ?? 0,
     playing: playback?.playing ?? false,
-    fps: playback?.fps ?? Math.max(1, parseInt(fpsInput.value, 10) || 15),
+    fps: playback?.fps ?? readFpsInput(),
+    backgroundId: currentBackgroundId,
     transform: getMoleculeTransform(),
     view: getViewState(),
     presenterId: collaboration.presenterId,
@@ -260,6 +379,7 @@ function updateCollaborationUi() {
   stepBack.disabled = !canControlSharedState;
   stepFwd.disabled = !canControlSharedState;
   fpsInput.disabled = !canControlSharedState;
+  backgroundSelect.disabled = !canControlSharedState;
 
   const statusLines = connected
     ? [
@@ -276,6 +396,9 @@ async function applyRemotePresenterState(state: PresenterState) {
   const applyVersion = ++remoteApplyVersion;
   applyingRemoteState = true;
   try {
+    await setSceneBackground(state.backgroundId, { broadcastState: false, persist: false });
+    if (applyVersion !== remoteApplyVersion) return;
+
     if (!state.trajectoryUrl && !moleculeRenderer) {
       statusEl.textContent = "Waiting for presenter to load a trajectory URL. Local files are not shared through the room.";
     }
@@ -303,6 +426,11 @@ async function applyRemotePresenterState(state: PresenterState) {
 }
 
 updateCollaborationUi();
+void setSceneBackground(currentBackgroundId, { broadcastState: false, persist: false });
+
+toggleControlsBtn.addEventListener("click", () => {
+  setControlsCollapsed(!uiEl.classList.contains("collapsed"));
+});
 
 // Desktop click-to-select (so the measurement tool is usable without a headset).
 renderer.domElement.addEventListener("dblclick", (event: MouseEvent) => {
@@ -347,6 +475,8 @@ async function loadTrajectoryFile(file: Blob, sourceUrl: string | null = null, b
       frameLabel.textContent = `${frame} / ${trajectory.numFrames - 1}`;
       markPresenterStateDirty();
     });
+    playback.fps = readFpsInput();
+    fpsInput.value = String(playback.fps);
 
     frameSlider.min = "0";
     frameSlider.max = String(trajectory.numFrames - 1);
@@ -434,11 +564,11 @@ stepFwd.addEventListener("click", () => {
   playback.setFrame(playback.frame + 1);
 });
 
-fpsInput.addEventListener("change", () => {
-  if (!playback) return;
-  playback.fps = Math.max(1, parseInt(fpsInput.value, 10) || 15);
-  fpsInput.value = String(playback.fps);
-  markPresenterStateDirty(true);
+fpsInput.addEventListener("input", () => applyFpsInput(false));
+fpsInput.addEventListener("change", () => applyFpsInput(true));
+
+backgroundSelect.addEventListener("change", () => {
+  void setSceneBackground(backgroundSelect.value, { broadcastState: true, persist: true });
 });
 
 roomInput.addEventListener("input", updateRoomLink);

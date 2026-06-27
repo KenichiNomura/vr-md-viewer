@@ -27,6 +27,7 @@ interface PresenterState {
   frameIndex: number;
   playing: boolean;
   fps: number;
+  backgroundId: string;
   transform: TransformState;
   view: ViewState;
   presenterId: string | null;
@@ -57,6 +58,14 @@ const DEFAULT_MAX_ROOM_USERS = 6;
 const DEFAULT_MAX_MESSAGE_BYTES = 8192;
 const DEFAULT_MAX_MESSAGES_PER_10_SECONDS = 240;
 const RATE_WINDOW_MS = 10_000;
+const DEFAULT_BACKGROUND_ID = "dark-cyberspace";
+const VALID_BACKGROUND_IDS = new Set([
+  DEFAULT_BACKGROUND_ID,
+  "none",
+  "neon-lab",
+  "orbital-deck",
+  "hologram-atrium",
+]);
 
 const DEFAULT_TRANSFORM: TransformState = {
   position: [0, 0, 0],
@@ -75,6 +84,7 @@ function makeDefaultState(): PresenterState {
     frameIndex: 0,
     playing: false,
     fps: 15,
+    backgroundId: DEFAULT_BACKGROUND_ID,
     transform: DEFAULT_TRANSFORM,
     view: DEFAULT_VIEW,
     presenterId: null,
@@ -165,6 +175,10 @@ function normalizeView(input: unknown, fallback: ViewState): ViewState {
   };
 }
 
+function normalizeBackgroundId(value: unknown, fallback: string) {
+  return typeof value === "string" && VALID_BACKGROUND_IDS.has(value) ? value : fallback;
+}
+
 function mergePresenterState(current: PresenterState, patch: Partial<PresenterState>): PresenterState {
   const frameIndex = isFiniteNumber(patch.frameIndex) ? Math.max(0, Math.floor(patch.frameIndex)) : current.frameIndex;
   const fps = isFiniteNumber(patch.fps) ? Math.min(60, Math.max(1, Math.round(patch.fps))) : current.fps;
@@ -177,6 +191,7 @@ function mergePresenterState(current: PresenterState, patch: Partial<PresenterSt
     frameIndex,
     playing: typeof patch.playing === "boolean" ? patch.playing : current.playing,
     fps,
+    backgroundId: normalizeBackgroundId(patch.backgroundId, current.backgroundId),
     transform: normalizeTransform(patch.transform, current.transform),
     view: normalizeView(patch.view, current.view ?? DEFAULT_VIEW),
     presenterId: current.presenterId,

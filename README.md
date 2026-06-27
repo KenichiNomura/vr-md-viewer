@@ -12,6 +12,8 @@ A browser-based molecular dynamics trajectory viewer for extended XYZ files, wit
 - Play multi-frame trajectories with a frame slider, step buttons, and FPS control.
 - Color atoms by element and update atom types correctly on each frame.
 - Compute bonds per frame from covalent radii.
+- Choose bundled 360-degree VR backgrounds, with high-contrast dark cyberspace as the default.
+- Collapse the control panel to keep more of the scene visible.
 - Enter VR through WebXR when the browser and headset support it.
 - Grab, move, and scale the molecule with VR controllers.
 - Select atoms to measure distances and angles.
@@ -44,7 +46,7 @@ Double-click atoms on desktop, or select atoms in VR, to show measurements. Sele
 
 ## Multiuser Rooms
 
-The viewer can join a shared room through a WebSocket room server. Each browser loads the same trajectory locally from a URL; the room only synchronizes lightweight state such as the current frame, play/pause state, FPS, presenter, molecule transform, and desktop camera view.
+The viewer can join a shared room through a WebSocket room server. Each browser loads the same trajectory locally from a URL; the room only synchronizes lightweight state such as the current frame, play/pause state, FPS, background, presenter, molecule transform, and desktop camera view.
 
 For desktop testing across browsers on the same network, use the HTTP app URL and WebSocket server URL shown by the dev servers:
 
