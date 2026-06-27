@@ -117,6 +117,7 @@ export class CollaborationClient {
   private status: ConnectionStatus = "offline";
   private roomId: string | null = null;
   private serverBase = "";
+  private intentionallyClosing = false;
   private user: RoomUser = {
     id: randomId(),
     name: "Guest",
@@ -176,6 +177,7 @@ export class CollaborationClient {
     }
 
     this.disconnect();
+    this.intentionallyClosing = false;
     this.roomId = normalizedRoomId;
     this.serverBase = base;
     this.user = {
@@ -189,23 +191,41 @@ export class CollaborationClient {
     this.ws = ws;
 
     ws.addEventListener("open", () => {
+      if (this.ws !== ws) return;
       this.setStatus("connected");
       this.send({ type: "join", user: this.user });
     });
-    ws.addEventListener("message", (event) => this.onMessage(event));
-    ws.addEventListener("close", () => {
+    ws.addEventListener("message", (event) => {
+      if (this.ws !== ws) return;
+      this.onMessage(event);
+    });
+    ws.addEventListener("close", (event) => {
+      if (this.ws !== ws) return;
+      const wasIntentional = this.intentionallyClosing;
       this.users = [];
       this.presenterId = null;
-      this.setStatus("offline");
+      this.ws = null;
+      this.roomId = null;
+      this.serverBase = "";
+      this.intentionallyClosing = false;
       this.callbacks.onPresence?.({ type: "presence", users: [], presenterId: null });
+      if (!wasIntentional && event.code !== 1000) {
+        this.setStatus("error");
+        const reason = event.reason ? `: ${event.reason}` : ` (code ${event.code})`;
+        this.callbacks.onError?.(`Room disconnected${reason}`);
+        return;
+      }
+      this.setStatus("offline");
     });
     ws.addEventListener("error", () => {
+      if (this.ws !== ws) return;
       this.callbacks.onError?.(`Room connection failed: ${base}`);
       this.setStatus("error");
     });
   }
 
   disconnect() {
+    this.intentionallyClosing = Boolean(this.ws);
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.send({ type: "leave" });
     }
