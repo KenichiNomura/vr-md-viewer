@@ -131,6 +131,9 @@ scene.add(measurementTool.group);
 
 const raycaster = new THREE.Raycaster();
 const tempMatrix = new THREE.Matrix4();
+const pointerNdc = new THREE.Vector2();
+const CLICK_SELECT_MAX_DRIFT_PX = 5;
+let pointerSelectStart: { pointerId: number; x: number; y: number } | null = null;
 
 function setupSelectionRaycast(controller: THREE.Group) {
   controller.addEventListener("select" as keyof THREE.Object3DEventMap, () => {
@@ -466,16 +469,34 @@ toggleRoomBtn.addEventListener("click", () => {
   setRoomCollapsed(!collaborationEl.classList.contains("collapsed"));
 });
 
-// Desktop click-to-select (so the measurement tool is usable without a headset).
-renderer.domElement.addEventListener("dblclick", (event: MouseEvent) => {
-  if (!moleculeRenderer) return;
+// Desktop click-to-select; a small drift guard lets normal orbit-dragging pass through.
+renderer.domElement.addEventListener("pointerdown", (event: PointerEvent) => {
+  if (event.button !== 0 || renderer.xr.isPresenting) {
+    pointerSelectStart = null;
+    return;
+  }
+  pointerSelectStart = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+});
+
+renderer.domElement.addEventListener("pointerup", (event: PointerEvent) => {
+  const start = pointerSelectStart;
+  pointerSelectStart = null;
+  if (!moleculeRenderer || !start || start.pointerId !== event.pointerId) return;
+  const dx = event.clientX - start.x;
+  const dy = event.clientY - start.y;
+  if (dx * dx + dy * dy > CLICK_SELECT_MAX_DRIFT_PX * CLICK_SELECT_MAX_DRIFT_PX) return;
+
   const rect = renderer.domElement.getBoundingClientRect();
-  const ndc = new THREE.Vector2(
+  pointerNdc.set(
     ((event.clientX - rect.left) / rect.width) * 2 - 1,
     -((event.clientY - rect.top) / rect.height) * 2 + 1,
   );
-  raycaster.setFromCamera(ndc, camera);
+  raycaster.setFromCamera(pointerNdc, camera);
   measurementTool.raycastSelect(raycaster, moleculeRenderer);
+});
+
+renderer.domElement.addEventListener("pointercancel", () => {
+  pointerSelectStart = null;
 });
 
 renderer.domElement.addEventListener("keydown", () => {});

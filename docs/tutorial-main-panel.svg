@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="680" viewBox="0 0 1100 680" role="img" aria-labelledby="title desc">
+  <title id="title">Main loading panel controls</title>
+  <desc id="desc">Clean annotated schematic of the main GEARS XR panel for loading XYZ files and changing backgrounds.</desc>
+  <defs>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%"><feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0b1220" flood-opacity="0.16"/></filter>
+    <style>
+      .page { fill: #f5f7fb; }
+      .mock { fill: #151b24; stroke: #d6dde8; stroke-width: 2; filter: url(#shadow); }
+      .title { fill: #f8fafc; font: 800 27px system-ui, sans-serif; }
+      .label { fill: #dce5f2; font: 700 17px system-ui, sans-serif; }
+      .muted { fill: #93a4b8; font: 14px system-ui, sans-serif; }
+      .field { fill: #0b1119; stroke: #657890; stroke-width: 1.5; }
+      .button { fill: #263244; stroke: #7f92aa; stroke-width: 1.5; }
+      .buttonText { fill: #f8fafc; font: 800 15px system-ui, sans-serif; }
+      .badge { fill: #22b8ff; stroke: #ffffff; stroke-width: 3; }
+      .badgeText { fill: white; font: 800 18px system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; }
+      .legendCard { fill: #ffffff; stroke: #d8e0ea; stroke-width: 1.5; filter: url(#shadow); }
+      .legendTitle { fill: #0f172a; font: 800 18px system-ui, sans-serif; }
+      .legendText { fill: #536273; font: 14px system-ui, sans-serif; }
+      .tip { fill: #e8f7ff; stroke: #9ddffc; stroke-width: 1.5; }
+      .tipText { fill: #075985; font: 700 15px system-ui, sans-serif; }
+    </style>
+  </defs>
+  <rect class="page" width="1100" height="680"/>
+  <text x="54" y="62" fill="#0f172a" font="800 28px system-ui, sans-serif">Main panel: load trajectories</text>
+  <text x="54" y="88" fill="#64748b" font="16px system-ui, sans-serif">Use this panel for file input, URL loading, background selection, and hiding controls.</text>
+
+  <g transform="translate(70 128)">
+    <rect class="mock" width="450" height="386" rx="18"/>
+    <text class="title" x="28" y="46">GEARS XR</text>
+    <rect class="button" x="354" y="22" width="70" height="34" rx="6"/>
+    <text class="buttonText" x="371" y="44">Hide</text>
+    <circle class="badge" cx="430" cy="20" r="18"/><text class="badgeText" x="430" y="21">4</text>
+
+    <text class="label" x="28" y="96">Load extended XYZ file</text>
+    <rect class="field" x="28" y="114" width="174" height="40" rx="6"/>
+    <text class="muted" x="44" y="139">Choose File</text>
+    <text class="muted" x="220" y="139">or drag and drop anywhere</text>
+    <circle class="badge" cx="22" cy="118" r="18"/><text class="badgeText" x="22" y="119">1</text>
+
+    <text class="label" x="28" y="200">Or load from a URL</text>
+    <rect class="field" x="28" y="218" width="286" height="42" rx="6"/>
+    <text class="muted" x="44" y="244">https://.../trajectory.xyz</text>
+    <rect class="button" x="326" y="218" width="98" height="42" rx="7"/>
+    <text class="buttonText" x="342" y="244">Load URL</text>
+    <circle class="badge" cx="22" cy="220" r="18"/><text class="badgeText" x="22" y="221">2</text>
+
+    <text class="label" x="28" y="308">Background</text>
+    <rect class="field" x="28" y="326" width="396" height="42" rx="6"/>
+    <text class="muted" x="44" y="352">Dark Cyberspace</text>
+    <path d="M396 342 l12 0 l-6 8 z" fill="#93a4b8"/>
+    <circle class="badge" cx="22" cy="328" r="18"/><text class="badgeText" x="22" y="329">3</text>
+  </g>
+
+  <g transform="translate(586 128)">
+    <rect class="legendCard" width="438" height="386" rx="18"/>
+    <text class="legendTitle" x="30" y="42">Button guide</text>
+    <g transform="translate(30 78)">
+      <circle class="badge" cx="16" cy="16" r="16"/><text class="badgeText" x="16" y="17">1</text>
+      <text class="legendTitle" x="48" y="14">Choose File</text>
+      <text class="legendText" x="48" y="38">Open a local XYZ file for single-user viewing.</text>
+    </g>
+    <g transform="translate(30 146)">
+      <circle class="badge" cx="16" cy="16" r="16"/><text class="badgeText" x="16" y="17">2</text>
+      <text class="legendTitle" x="48" y="14">Load URL</text>
+      <text class="legendText" x="48" y="38">Load a browser-accessible trajectory URL.</text>
+    </g>
+    <g transform="translate(30 214)">
+      <circle class="badge" cx="16" cy="16" r="16"/><text class="badgeText" x="16" y="17">3</text>
+      <text class="legendTitle" x="48" y="14">Background</text>
+      <text class="legendText" x="48" y="38">Select a 360-degree environment or None.</text>
+    </g>
+    <g transform="translate(30 282)">
+      <circle class="badge" cx="16" cy="16" r="16"/><text class="badgeText" x="16" y="17">4</text>
+      <text class="legendTitle" x="48" y="14">Hide / Show</text>
+      <text class="legendText" x="48" y="38">Collapse the panel to free screen space.</text>
+    </g>
+  </g>
+
+  <g transform="translate(70 558)">
+    <rect class="tip" width="954" height="58" rx="14"/>
+    <text class="tipText" x="24" y="36">Room tip: use Load URL for multiuser demos. Local files stay only in your own browser.</text>
+  </g>
+</svg>

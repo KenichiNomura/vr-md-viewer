@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">GEARS XR full window layout</title>
+  <desc id="desc">Clean schematic of the GEARS XR interface showing the main panel, Enter VR button, playback panel, and room panel.</desc>
+  <defs>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08131f"/>
+      <stop offset="0.52" stop-color="#0d1b2a"/>
+      <stop offset="1" stop-color="#05070c"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0b1220" flood-opacity="0.18"/>
+    </filter>
+    <style>
+      .page { fill: #f5f7fb; }
+      .screen { fill: url(#screen); stroke: #d6dde8; stroke-width: 2; filter: url(#cardShadow); }
+      .panel { fill: #151b24; stroke: #344255; stroke-width: 1.5; }
+      .panelText { fill: #f5f8fc; font: 700 18px system-ui, sans-serif; }
+      .uiText { fill: #d9e2ef; font: 600 13px system-ui, sans-serif; }
+      .muted { fill: #91a2b7; font: 12px system-ui, sans-serif; }
+      .button { fill: #263244; stroke: #6f8198; stroke-width: 1.2; }
+      .field { fill: #0b1119; stroke: #61738a; stroke-width: 1.2; }
+      .badge { fill: #22b8ff; stroke: #f5fbff; stroke-width: 3; }
+      .badgeText { fill: white; font: 800 18px system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; }
+      .legendCard { fill: #ffffff; stroke: #d8e0ea; stroke-width: 1.5; filter: url(#cardShadow); }
+      .legendTitle { fill: #0f172a; font: 800 18px system-ui, sans-serif; }
+      .legendText { fill: #536273; font: 14px system-ui, sans-serif; }
+      .atomBond { stroke: #dce4ef; stroke-width: 8; stroke-linecap: round; }
+    </style>
+  </defs>
+  <rect class="page" width="1200" height="760"/>
+  <text x="54" y="62" fill="#0f172a" font="800 28px system-ui, sans-serif">GEARS XR interface map</text>
+  <text x="54" y="88" fill="#64748b" font="16px system-ui, sans-serif">Where each control panel appears in the app window.</text>
+
+  <g transform="translate(54 116)">
+    <rect class="screen" width="820" height="560" rx="24"/>
+    <g opacity="0.42">
+      <path d="M0 330 H820" stroke="#243244"/>
+      <path d="M410 0 V560" stroke="#243244"/>
+      <path d="M90 445 C240 382, 382 430, 508 392 S690 400, 790 335" stroke="#6d5df7" stroke-width="2" fill="none"/>
+      <path d="M84 98 C250 44, 392 92, 538 55 S710 74, 784 36" stroke="#1bbfe8" stroke-width="2" fill="none"/>
+    </g>
+
+    <g transform="translate(360 184)">
+      <circle cx="0" cy="0" r="122" fill="#07111d" stroke="#1bbfe8" stroke-width="2"/>
+      <line class="atomBond" x1="-64" y1="-16" x2="-8" y2="35"/>
+      <line class="atomBond" x1="-8" y1="35" x2="60" y2="2"/>
+      <line class="atomBond" x1="-8" y1="35" x2="22" y2="82"/>
+      <line class="atomBond" x1="-88" y1="42" x2="-8" y2="35"/>
+      <circle cx="-64" cy="-16" r="28" fill="#ff4d5a"/>
+      <circle cx="-8" cy="35" r="36" fill="#9aa4b2"/>
+      <circle cx="60" cy="2" r="24" fill="#ffd54f"/>
+      <circle cx="22" cy="82" r="20" fill="#ffffff"/>
+      <circle cx="-88" cy="42" r="19" fill="#56a7ff"/>
+    </g>
+
+    <g transform="translate(28 28)">
+      <rect class="panel" width="266" height="176" rx="10"/>
+      <text class="panelText" x="18" y="32">GEARS XR</text>
+      <rect class="button" x="208" y="15" width="42" height="24" rx="5"/>
+      <text class="muted" x="217" y="32">Hide</text>
+      <text class="uiText" x="18" y="68">Load extended XYZ file</text>
+      <rect class="field" x="18" y="80" width="112" height="24" rx="4"/>
+      <text class="muted" x="28" y="97">Choose File</text>
+      <text class="uiText" x="18" y="130">Or load from a URL</text>
+      <rect class="field" x="18" y="142" width="158" height="24" rx="4"/>
+      <rect class="button" x="184" y="142" width="64" height="24" rx="5"/>
+      <text class="muted" x="195" y="159">Load URL</text>
+      <circle class="badge" cx="244" cy="156" r="18"/>
+      <text class="badgeText" x="244" y="157">1</text>
+    </g>
+
+    <g transform="translate(690 28)">
+      <rect class="button" width="98" height="38" rx="6" fill="#f8fafc"/>
+      <text x="22" y="25" fill="#162033" font="800 14px system-ui, sans-serif">Enter VR</text>
+      <circle class="badge" cx="-20" cy="19" r="18"/>
+      <text class="badgeText" x="-20" y="20">2</text>
+    </g>
+
+    <g transform="translate(22 442)">
+      <rect class="panel" width="318" height="88" rx="10"/>
+      <text class="uiText" x="14" y="24">Frame: 0 / 120</text>
+      <rect class="field" x="14" y="34" width="290" height="12" rx="6"/>
+      <circle cx="82" cy="40" r="10" fill="#22b8ff"/>
+      <rect class="button" x="14" y="56" width="48" height="22" rx="5"/>
+      <text class="muted" x="25" y="72">Play</text>
+      <rect class="button" x="72" y="56" width="34" height="22" rx="5"/>
+      <text class="muted" x="84" y="72">Prev</text>
+      <rect class="button" x="116" y="56" width="34" height="22" rx="5"/>
+      <text class="muted" x="127" y="72">Next</text>
+      <text class="uiText" x="166" y="72">FPS</text>
+      <rect class="field" x="204" y="54" width="46" height="26" rx="5"/>
+      <text class="muted" x="219" y="72">15</text>
+      <circle class="badge" cx="294" cy="20" r="18"/>
+      <text class="badgeText" x="294" y="21">3</text>
+    </g>
+
+    <g transform="translate(606 484)">
+      <rect class="panel" width="188" height="46" rx="10"/>
+      <text class="panelText" x="16" y="30">Room</text>
+      <rect class="button" x="126" y="10" width="46" height="26" rx="5"/>
+      <text class="muted" x="137" y="28">Show</text>
+      <circle class="badge" cx="-20" cy="23" r="18"/>
+      <text class="badgeText" x="-20" y="24">4</text>
+    </g>
+  </g>
+
+  <g transform="translate(920 132)">
+    <rect class="legendCard" width="226" height="420" rx="18"/>
+    <text class="legendTitle" x="24" y="40">Panels</text>
+    <g transform="translate(24 72)">
+      <circle class="badge" cx="16" cy="16" r="16"/><text class="badgeText" x="16" y="17">1</text>
+      <text class="legendTitle" x="44" y="14">Main panel</text>
+      <text class="legendText" x="44" y="36">Load XYZ files.</text>
+      <text class="legendText" x="44" y="56">Choose backgrounds.</text>
+    </g>
+    <g transform="translate(24 152)">
+      <circle class="badge" cx="16" cy="16" r="16"/><text class="badgeText" x="16" y="17">2</text>
+      <text class="legendTitle" x="44" y="14">Enter VR</text>
+      <text class="legendText" x="44" y="36">Start headset WebXR.</text>
+    </g>
+    <g transform="translate(24 232)">
+      <circle class="badge" cx="16" cy="16" r="16"/><text class="badgeText" x="16" y="17">3</text>
+      <text class="legendTitle" x="44" y="14">Playback</text>
+      <text class="legendText" x="44" y="36">Control frames.</text>
+      <text class="legendText" x="44" y="56">Set Play and FPS.</text>
+    </g>
+    <g transform="translate(24 312)">
+      <circle class="badge" cx="16" cy="16" r="16"/><text class="badgeText" x="16" y="17">4</text>
+      <text class="legendTitle" x="44" y="14">Room</text>
+      <text class="legendText" x="44" y="36">Join and copy links.</text>
+      <text class="legendText" x="44" y="56">Take presenter control.</text>
+    </g>
+  </g>
+</svg>
